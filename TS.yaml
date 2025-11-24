@@ -1,0 +1,80 @@
+# Čítač jedniček
+input: '1111111'
+blank: ' '
+start state: move_right
+table:
+
+  # Pohyb na začátek pásky
+  move_left:
+    0 : {write: 0, L: move_left}
+    1 : {write: 1, L: move_left}
+    ' ' : {write: ' ', R: remove}
+    X : {write: X, L: move_left}
+    '>' : {write: ' ', R: remove} # před začátkem pásky je indikátor začátku pásky, ale chová se stejně jako prázdný znak
+
+  # logika přičítání 1 k binárnímu číslu + kontrola, že délka je < 15
+  add:
+    0 : {write: 1, L: move_left}
+    1 : {write: 0, L: add}
+    ' ' : {write: ' ', L: err}
+    X : {write: X, L: err}
+
+  # pohyb doprava, přepínač mezi tvorbou čítače a přičítáním k čítači
+  move_right:
+    0 : {write: 0, R: move_right}
+    1 : {write: 1, R: move_right}
+    ' ' : {write: X, R: make_bcd_bit8}
+    X : {write: X, R: move_right_counter}
+  
+  # pohyb doprava v čítači
+  move_right_counter:
+    0 : {write: 0, R: move_right_counter}
+    1 : {write: 1, R: move_right_counter}
+    ' ' : {write: ' ', L: add}
+    X : {write: 1, L: err}
+  
+  #tvorba čítače, bit váhy 8
+  make_bcd_bit8:
+    0 : {write: 0, L: err}
+    1 : {write: 1, L: err}
+    ' ' : {write: 0, R: make_bcd_bit4}
+    X : {write: X, L: err}
+    
+  #tvorba čítače, bit váhy 4  
+  make_bcd_bit4:
+    0 : {write: 0, L: err}
+    1 : {write: 1, L: err}
+    ' ' : {write: 0, R: make_bcd_bit2}
+    X : {write: X, L: err}
+  
+  #tvorba čítače, bit váhy 2
+  make_bcd_bit2:
+    0 : {write: 0, L: err}
+    1 : {write: 1, L: err}
+    ' ' : {write: 0, R: make_bcd_bit1}
+    X : {write: X, L: err}
+  
+  #tvorba čítače, bit váhy 1
+  make_bcd_bit1:
+    0 : {write: 0, L: err}
+    1 : {write: 1, L: err}
+    ' ' : {write: 0, R: move_right_counter_0}
+    X : {write: X, L: err}
+    
+  # validace, že za čítačem je prázdný znak, technicky by šlo z make_bcd_bit1 jít přímo do move_left.
+  move_right_counter_0:
+    0 : {write: 0, L: err}
+    1 : {write: 1, L: err}
+    ' ' : {write: ' ', L: move_left}
+    X : {write: X, L: err}
+    
+  # přečtení první neprázdné hodnoty na pásce
+  remove:
+    0 : {write: 0, L: err}
+    1 : {write: ' ', R: move_right}
+    ' ' : {write: ' ', L: err}
+    X : {write: ' ', R: ok}
+  
+  # halt stavy
+  err:
+  ok:
